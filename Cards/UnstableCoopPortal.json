@@ -1,0 +1,9 @@
+{
+	"id": "cp_unstable_coop_portal",
+	"nameTerm":"cp_unstable_coop_portal",
+	"descriptionTerm": "cp_unstable_coop_portal_description",
+	"value": -1,
+	"type": "Structures",
+	"icon": "unstablecoopportal.png",
+	"script": "CoopPortalsNS.UnstableCoopPortal"
+}

@@ -1,0 +1,11 @@
+{
+	"id": "cp_void_portal",
+	"nameTerm":"cp_void_portal",
+	"descriptionTerm": "cp_void_portal_description",
+	"value": -1,
+	"type": "Structures",
+	"icon": "voidPortal.png",
+	"script": "CoopPortalsNS.VoidPortal",
+	"__IsBuilding": true,
+	"__HideFromCardopedia": true
+}

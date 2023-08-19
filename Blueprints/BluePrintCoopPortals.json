@@ -1,0 +1,18 @@
+
+{
+	"id": "blueprint_cp_coop_portal",
+	"nameTerm":"cp_coop_portal",
+	"group": "Important",
+	"stackText": "Building a portal",
+	"icon": "CoopPortal.png",
+	"subprints": [
+		{
+			"requiredCards": "stone,stone,stone,flint",
+			"cardsToRemove": "stone,stone,stone,flint",
+			"resultCard": "cp_coop_portal",
+			"extraResultCards": "",
+			"time": 0.0,
+			"statusTerm": "idea_cp_coop_portal_status"
+		}
+	]
+}

@@ -1,0 +1,10 @@
+{
+	"id": "cp_coop_portal",
+	"nameTerm":"cp_coop_portal",
+	"descriptionTerm": "cp_coop_portal_description",
+	"value": 5,
+	"type": "Structures",
+	"icon": "coopPortal.png",
+	"script": "CoopPortalsNS.CoopPortal",
+	"__IsBuilding": true
+}
