@@ -18,6 +18,8 @@ public class CoopPortalsPlugin : Mod
 	public const int QuestReservedGroupId = 2498646;
 	public static ModLogger? L;
 	public static ConfigEntry<bool> AllowDimentionalSlits;
+	public static ConfigEntry<bool> VsMode;
+	public static bool prevDebug = false;
 
 
 	//public static float voidQuestCountdown = 0;
@@ -62,6 +64,9 @@ public class CoopPortalsPlugin : Mod
 		AllowDimentionalSlits = Config.GetEntry<bool>("Allow Dimentional Slits", true, new ConfigUI {
 			Tooltip = "Allow people connecting to you even when you haven't opened a portal to them",
 		});
+		VsMode = Config.GetEntry<bool>("VS Mode", false, new ConfigUI {
+			Tooltip = "You can't send hostiles through. Any villager sent ",
+		});
 
 	}
 
@@ -75,7 +80,6 @@ public class CoopPortalsPlugin : Mod
 		LoadAudio(System.IO.Path.Combine(Path, "Sounds","VoidPortalPickup2.mp3"), "voidPickup");
         base.Ready();
     }
-
     
 
 	public static CoopPortal? GetLinkedPortal(CSteamID friendId, string ToPortalUId = "", string FromPortalUId = "")
@@ -153,9 +157,13 @@ public class CoopPortalsPlugin : Mod
 		}
 	}
 
-	public static void Log(string s)
+	public static void Log(object s)
 	{
-		L?.Log(s);
+		L?.Log(s.ToString());
+	}
+	public static void LogError(object s)
+	{
+		L?.LogError(s.ToString());
 	}
 
 	[HarmonyPatch(typeof(GameScreen), "UpdateIdeasLog")]
@@ -174,6 +182,16 @@ public class CoopPortalsPlugin : Mod
 	private static void WorldManager_Update_Prefix(ref WorldManager __instance)
 	{
 		uint pcubMsgSize;
+		if (prevDebug != GameScreen.instance.DebugScreen.gameObject.activeInHierarchy)
+		{
+			prevDebug = GameScreen.instance.DebugScreen.gameObject.activeInHierarchy;
+			
+			Log("debug menu change registered");
+			if (VsMode.Value)
+			{
+				WorldManager.instance.GetCards<CoopPortal>().ForEach(cp => {cp.SendToFriend(PortalPacket.MessageType.Notification, $"Debug menu {(prevDebug ? "opened" : "closed")}");Log("Sending debug menu change notif to" + cp.ConnectedFriendName);});
+			}
+		}
 		while (SteamNetworking.IsP2PPacketAvailable(out pcubMsgSize, NetworkReservedChannel))
 		{
 			byte[] array = new byte[pcubMsgSize];
@@ -308,7 +326,7 @@ public class CoopPortalsPlugin : Mod
 	[HarmonyPostfix]
 	static private void CardData_CanHaveCardOnTop_Postfix(CardData otherCard, CardData __instance, ref bool __result)
 	{
-		if (otherCard is CoopPortal portal && __instance is not CoopPortal)
+		if (otherCard is CoopPortal portal && (__instance is not CoopPortal || VsMode.Value))
 		{
 			__result = false;
 		}
@@ -317,7 +335,8 @@ public class CoopPortalsPlugin : Mod
 	[HarmonyPostfix]
 	static private void CardData_UpdateCard_Postfix(CardData __instance)
 	{
-		if (WorldManager.instance.DraggingCard
+		if (!VsMode.Value
+			&& WorldManager.instance.DraggingCard
 			&& WorldManager.instance.DraggingCard != __instance.MyGameCard
 			&& !__instance.MyGameCard.HighlightActive
 			&& !__instance.MyGameCard.HasChild
@@ -465,13 +484,17 @@ public class CoopPortalsPlugin : Mod
 	[HarmonyPrefix]
 	public static bool WorldManager_QuestCompleted_Prefix(Quest quest, WorldManager __instance)
 	{
+		Log("Completed quest " + quest.Id);
+		if (VsMode.Value)
+		{
+			WorldManager.instance.GetCards<CoopPortal>().ForEach(cp => {cp.SendToFriend(PortalPacket.MessageType.Notification, "Done: " + quest.Description);Log("Sending debug menu change notif to" + cp.ConnectedFriendName);});
+		}
+
 		// cut the sound
 		if (quest.Id != "cp_void_portal_invisible" && quest.Id != "cp_void_portal_only_left_invisible")
 		{
 			return true;
 		}
-
-		Debug.Log("Completed quest " + quest.Id);
 		if (GameScreen.instance != null && quest.QuestLocation == __instance.CurrentBoard.Location)
 		{
 			GameScreen.instance.AddNotification(SokLoc.Translate("label_quest_completed"), quest.Description, delegate
@@ -560,7 +583,65 @@ public class CoopPortalsPlugin : Mod
 
 		return false;
 	}
+	[HarmonyPatch(typeof(WorldManager), nameof(WorldManager.EndOfMonthRoutine))]
+	[HarmonyPostfix]
+	public static void WorldManager_EndOfMonthRoutine_Postfix(WorldManager __instance)
+	{
+		foreach (CardData card2 in __instance.GetCards("cp_evil_trained_monkey"))
+		{
+			__instance.ChangeToCard(card2.MyGameCard, Cards.monkey).UpdateCardText();
+		}
+		if (__instance.GetCardCount<Eviler>() >0) __instance.QueueCutscene(EvilCoughtYou(__instance)); // TODO - end of the month battle in case opponent just runs away
+	}
+	public static IEnumerator EvilCoughtYou(WorldManager __instance)
+	{
+		GameCanvas.instance.SetScreen<CutsceneScreen>();
+		var evilers = __instance.GetCards<Eviler>();
+		// if (evilers.Any(eviler => eviler.InConflict)) yield break;
+		evilers.RemoveAll(eviler => eviler is EvilBaby || eviler.InConflict);
+		if (!evilers.Any()) {
+			Cutscenes.Stop();
+			yield break;
+		}
+		var target = evilers.First().CurrentTarget;
+		if (target.InConflict)
+		{
+			var newTarget = __instance.AllCards.FirstOrDefault(gc => !gc.InConflict && gc.CardData is BaseVillager);
+			if (newTarget == null)
+			{
+				Cutscenes.Stop();
+				yield break;
+			}
+			target = newTarget.CardData as Combatable;
+		}
+		target.MyGameCard.RemoveFromStack();
+		evilers.First().MyGameCard.transform.position = target.MyGameCard.transform.position;
+		evilers.First().MyGameCard.TargetPosition = target.MyGameCard.transform.position;
+		Conflict conflict = Conflict.StartConflict(evilers.First());
+		foreach (Combatable item in evilers)
+		{
+			if (!item.MyGameCard.InConflict)
+				conflict.JoinConflict(item as Combatable);
+		}
+		conflict.JoinConflict(target as Combatable);
+		__instance.CutsceneTitle = "They snuck up while you were eating";
+		__instance.CutsceneText = "";
+		GameCamera.instance.TargetPositionOverride = target.MyGameCard.transform.position;
+		yield return __instance.WaitForContinueClicked("Shaks");
+		Cutscenes.Stop();
+	}
 
+	[HarmonyPatch(typeof(GameCanvas), nameof(GameCanvas.HandleTransition))]
+	[HarmonyPostfix]
+	public static void GameCanvas_HandleTransition_Postfix(SokScreen prevScreen, SokScreen nextScreen, GameCanvas __instance)
+	{
+		Log("screen change registered");
+		if (nextScreen is GameOverScreen && VsMode.Value)
+		{
+			Log("game over registered");
+			WorldManager.instance.GetCards<CoopPortal>().ForEach(cp => {cp.SendToFriend(PortalPacket.MessageType.Notification, "Game Over for me");Log("Sending 'you won' to" + cp.ConnectedFriendName);});
+		}
+	}
 	public static void SendPortalPacket(CSteamID steamIDRemote, byte[] pubData, uint cubData, EP2PSend eP2PSendType = EP2PSend.k_EP2PSendReliable)
 	{
 		SteamNetworking.SendP2PPacket(steamIDRemote, pubData, cubData, eP2PSendType,NetworkReservedChannel);

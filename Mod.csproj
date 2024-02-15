@@ -37,6 +37,11 @@
       <HintPath>$(stacklands)/Stacklands_Data/Managed/Mono.Cecil.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Publicize Include="GameScripts"  IncludeCompilerGeneratedMembers="false"/>
+    <PackageReference Include="Krafs.Publicizer" Version="2.2.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <Reference Include="MonoMod.RuntimeDetour">
       <HintPath>$(stacklands)/Stacklands_Data/Managed/MonoMod.RuntimeDetour.dll</HintPath>
       <Private>False</Private>

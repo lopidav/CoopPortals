@@ -1,0 +1,15 @@
+{
+	"id": "cp_evil_baby",
+	"nameTerm":"card_kid_name",
+	"descriptionTerm": "card_kid_description",
+	"value": -1,
+	"type": "Mobs",
+	"icon": "evilBaby.png",
+	"script": "CoopPortalsNS.EvilBaby",
+	"_IsAggressive": true,
+	"_Drops": {
+        "CardsInPack": 0,
+        "CardBagType": 0,
+        "Chances":[]
+    }
+}

@@ -12,7 +12,7 @@ namespace CoopPortalsNS;
 public class VoidPortal : CardData
 {
     //float voidQuestTimer = 0f;
-    protected override void Awake()
+    public override void Awake()
     {
         PickupSound = CoopPortalsPlugin.MyAudioClips["voidPickup"];
         PickupSoundGroup = PickupSoundGroup.Custom;
@@ -20,7 +20,7 @@ public class VoidPortal : CardData
         base.Awake();
         QuestManager.instance.UpdateCurrentQuests();
     }
-    protected override bool CanHaveCard(CardData otherCard)
+    public override bool CanHaveCard(CardData otherCard)
 	{
 		return false;
 	}

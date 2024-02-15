@@ -18,33 +18,36 @@ public class PortalPacket
 		Pong,
 		PortalingCardsStart,
 		PortalingCardsSuccess,
-		PortalingCardsFail
+		PortalingCardsFail,
+		Notification
 	}
 	public short Age = 10;
 	public List<SavedCard> Cards = new List<SavedCard>();
 
 	public MessageType Type;
+	public string Message = "";
 	public string FromFriendId = SteamUser.GetSteamID().ToString();
 	public string FromPortalUId = "";
 	public string ToPortalUId = "";
 	public bool IsFromUnstablePortal = false;
 
-	public PortalPacket(MessageType _messageType, string _fromPortalUId = "", string _toPortalUId = "", short _age = 10)
+	public PortalPacket(MessageType _messageType, string _fromPortalUId = "", string _toPortalUId = "", short _age = 10, string _message = "")
 	{
 		Type = _messageType;
 		FromPortalUId = _fromPortalUId;
 		ToPortalUId = _toPortalUId;
 		Age = _age;
-		
+		Message = _message;
 	}
 
-	public PortalPacket(MessageType _messageType, List<SavedCard> _cards, string _fromPortalUId = "", string _toPortalUId = "", short _age = 10)
+	public PortalPacket(MessageType _messageType, List<SavedCard> _cards, string _fromPortalUId = "", string _toPortalUId = "", short _age = 10, string _message = "")
 	{
 		Cards = _cards;
 		Type = _messageType;
 		FromPortalUId = _fromPortalUId;
 		ToPortalUId = _toPortalUId;
 		Age = _age;
+		Message = _message;
 	}
 
 	public byte[] ToBytes()

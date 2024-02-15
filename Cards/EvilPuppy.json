@@ -1,0 +1,18 @@
+{
+	"id": "cp_evil_puppy",
+	"nameTerm":"card_puppy_name",
+	"descriptionTerm": "card_puppy_description",
+	"value": -1,
+	"type": "Mobs",
+	"icon": "evilPuppy.png",
+	"script": "CoopPortalsNS.Eviler",
+	"_IsAggressive": true,
+    "_InheritCombatStatsFromOtherCard": true,
+    "_InheritCombatStatsFrom": "dog",
+	"_CanHaveInventory": true,
+	"_Drops": {
+        "CardsInPack": 0,
+        "CardBagType": 0,
+        "Chances":[]
+    }
+}

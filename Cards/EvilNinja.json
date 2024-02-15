@@ -1,0 +1,18 @@
+{
+	"id": "cp_evil_ninja",
+	"nameTerm":"card_ninja_name",
+	"descriptionTerm": "card_ninja_description",
+	"value": -1,
+	"type": "Mobs",
+	"icon": "evilNinja.png",
+	"script": "CoopPortalsNS.Eviler",
+	"_IsAggressive": true,
+    "_InheritCombatStatsFromOtherCard": true,
+    "_InheritCombatStatsFrom": "villager",
+	"_CanHaveInventory": true,
+	"_Drops": {
+        "CardsInPack": 0,
+        "CardBagType": 0,
+        "Chances":[]
+    }
+}

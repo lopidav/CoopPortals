@@ -19,13 +19,13 @@ public class UnstableCoopPortal : CoopPortal
 		MyGameCard.DestroyCard();
 	}
 	
-	public override PortalPacket? MakeAPack(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10)
+	public override PortalPacket? MakeAPack(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10, string message = "")
 	{
 		if (type == PortalPacket.MessageType.Ping || type == PortalPacket.MessageType.PortalingCardsSuccess)
 		{
 			return null;
 		}
-		PortalPacket? portalPacket = base.MakeAPack(cards, type, age);
+		PortalPacket? portalPacket = base.MakeAPack(cards, type, age, message);
 		if (portalPacket != null) portalPacket.IsFromUnstablePortal = true;
 		return portalPacket;
 	}

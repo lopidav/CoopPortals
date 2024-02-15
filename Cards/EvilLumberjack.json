@@ -1,0 +1,18 @@
+{
+	"id": "cp_evil_lumberjack",
+	"nameTerm":"card_lumberjack_name",
+	"descriptionTerm": "card_lumberjack_description",
+	"value": -1,
+	"type": "Mobs",
+	"icon": "evilLumberjack.png",
+	"script": "CoopPortalsNS.Eviler",
+	"_IsAggressive": true,
+    "_InheritCombatStatsFromOtherCard": true,
+    "_InheritCombatStatsFrom": "villager",
+	"_CanHaveInventory": true,
+	"_Drops": {
+        "CardsInPack": 0,
+        "CardBagType": 0,
+        "Chances":[]
+    }
+}

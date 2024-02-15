@@ -41,7 +41,7 @@ public class CoopPortal : CardData
 
 	public string ConnectedFriendName => HasConnectedFriend ? SteamFriends.GetFriendPersonaName(ConnectedFriend) : "";
 
-	protected override bool CanHaveCard(CardData otherCard)
+	public override bool CanHaveCard(CardData otherCard)
 	{
 		return HasConnectedFriend && !MyGameCard.TimerRunning && (otherCard is not CoopPortal portal || portal.ConnectionActive || ConnectionActive);
 	}
@@ -84,6 +84,11 @@ public class CoopPortal : CardData
 		case PortalPacket.MessageType.PortalingCardsFail:
 			ReceiveCards(packet.Cards, packet.Age);
 			break;
+		case PortalPacket.MessageType.Notification:
+			GameScreen.instance.AddNotification("From: "+this.ConnectedFriendName, packet.Message, delegate
+			{
+			});
+			break;
 		}
 	}
 
@@ -113,6 +118,10 @@ public class CoopPortal : CardData
 	{
 		if (!MyGameCard.IsDemoCard)
 		{
+			// if (CoopPortalsPlugin.VsMode.Value)
+			// {
+			// 	this.Value = -1;
+			// }
 			if (!FirstTimeActionsDone)
 			{
 				//CoopPortalsPlugin.Log("doin first time actions");
@@ -170,11 +179,9 @@ public class CoopPortal : CardData
 	public virtual void SelectLinkedFriend()
 	{
 		CoopPortalsPlugin.Log("attempting to show friend list");
-		CoopPortalsPlugin.Log("yo");
 		ModalScreen.instance.Clear();
 		ModalScreen.instance.SetTexts("select friend to connect to", "");
 		int friendCount = SteamFriends.GetFriendCount(EFriendFlags.k_EFriendFlagImmediate);
-		CoopPortalsPlugin.Log("yo1");
 
 		CustomButton backButton = UnityEngine.Object.Instantiate(ModalScreen.instance.ButtonPrefab);
 		backButton.transform.SetParent(ModalScreen.instance.ButtonParent);
@@ -182,7 +189,6 @@ public class CoopPortal : CardData
 		backButton.transform.localScale = Vector3.one;
 		backButton.transform.localRotation = Quaternion.identity;
 		backButton.TextMeshPro.text = SokLoc.Translate("label_back");
-		CoopPortalsPlugin.Log("yo2");
 		backButton.Clicked += delegate
 		{
 			CoopPortalsPlugin.Log("Friend selection closed.");
@@ -198,28 +204,34 @@ public class CoopPortal : CardData
 			this.MyGameCard.DestroyCard(true, true);
 		};
 
-		CoopPortalsPlugin.Log("yo3");
 		GameObject gameObject = UnityEngine.Object.Instantiate(GameScreen.instance.IdeasTab.gameObject, ModalScreen.instance.ButtonParent);
+		foreach (RectTransform item in gameObject.transform)
+		{
+			if (item.name != "SearchParent" && item.name != "Scroll View")
+			{
+				UnityEngine.Object.Destroy(item.gameObject);
+			}
+		}
 		RectTransform cardTabReactTransform = gameObject.GetComponent<RectTransform>();
 		if (cardTabReactTransform != null)
 		{
 			cardTabReactTransform.anchoredPosition = new Vector2(275f, -80f);
 		}
-		ContentSizeFitter component = GameCanvas.instance.Modal.GetChild(1).gameObject.GetComponent<ContentSizeFitter>();
+		ContentSizeFitter component = GameCanvas.instance.Modal.Find("Modal").gameObject.GetComponent<ContentSizeFitter>();
 		if (component != null)
 		{
 			component.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
 		}
-		RectTransform component2 = GameCanvas.instance.Modal.GetChild(1).gameObject.GetComponent<RectTransform>();
+		RectTransform component2 = GameCanvas.instance.Modal.Find("Modal").gameObject.GetComponent<RectTransform>();
 		if (component2 != null)
 		{
 			component2.sizeDelta = new Vector2(600f, 708f);
 		}
-		RectTransform component3 = gameObject.transform.GetChild(1).gameObject.GetComponent<RectTransform>();
+		RectTransform component3 = gameObject.transform.Find("Scroll View").gameObject.GetComponent<RectTransform>();
 		component3.sizeDelta = new Vector2(0f, 500f);
 		component3.anchoredPosition = new Vector2(0f, -300f);
 		gameObject.SetActive(value: true);
-		Transform content = gameObject.transform.GetChild(1).GetChild(0).GetChild(0);
+		Transform content = gameObject.transform.Find("Scroll View/Viewport/IdeaParent");
 		foreach (RectTransform item in content)
 		{
 			UnityEngine.Object.Destroy(item.gameObject);
@@ -245,24 +257,52 @@ public class CoopPortal : CardData
 		
 
 		bool flag = true;
+		// Transform content = gameObject.transform.Find("Scroll View/Viewport");
+		// foreach (RectTransform item in content)
+		// {
+		// 	UnityEngine.Object.Destroy(item.gameObject);
+		// }
+		// TMP_InputField component4 = gameObject.transform.GetComponentInChildren<TMP_InputField>();
+		// component4.text = "";
+		// component4.onValueChanged.AddListener(delegate(string value)
+		// {
+		// 	foreach (RectTransform item2 in content)
+		// 	{
+		// 		CustomButton component5 = item2.gameObject.GetComponent<CustomButton>();
+		// 		if (component5 != null)
+		// 		{
+		// 			component5.gameObject.SetActive(component5.TextMeshPro.text.ToLower().Contains(value.ToLower()));
+		// 		}
+		// 		// else
+		// 		// {
+		// 		// 	item2.gameObject.SetActive(value: false);
+		// 		// }
+		// 	}
+		// });
+		// ModalScreen.instance.ButtonParent.GetComponent<VerticalLayoutGroup>().childForceExpandWidth = true;
+		
+
+		// bool flag = true;
 		// Adds themselves:
-/*
-		CSteamID meId = SteamUser.GetSteamID();
-		CustomButton customButton = UnityEngine.Object.Instantiate(ModalScreen.instance.ButtonPrefab);
-		customButton.transform.SetParent(content);
-		customButton.transform.localPosition = Vector3.zero;
-		customButton.transform.localScale = Vector3.one;
-		customButton.transform.localRotation = Quaternion.identity;
-		customButton.TextMeshPro.text = SteamFriends.GetPersonaName();
-		customButton.Clicked += delegate
+		if (WorldManager.instance.DebugScreenOpened)
 		{
-			GameCanvas.instance.CloseModal();
-			component2.sizeDelta = new Vector2(600, 100);
-			component.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-			ConnectedFriend = meId;
-			ConnectionPing();
-		};
-*/
+			CSteamID meId = SteamUser.GetSteamID();
+			CustomButton customButton = UnityEngine.Object.Instantiate(ModalScreen.instance.ButtonPrefab);
+			customButton.transform.SetParent(content);
+			customButton.transform.localPosition = Vector3.zero;
+			customButton.transform.localScale = Vector3.one;
+			customButton.transform.localRotation = Quaternion.identity;
+			customButton.TextMeshPro.text = SteamFriends.GetPersonaName();
+			customButton.Clicked += delegate
+			{
+				GameCanvas.instance.CloseModal();
+				component2.sizeDelta = new Vector2(600, 100);
+				component.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+				ConnectedFriend = meId;
+				ConnectionPing();
+			};
+		}
+
 		for (int i = 0; i < friendCount; i++)
 		{
 			try
@@ -457,6 +497,87 @@ public class CoopPortal : CardData
 
 			foreach (SavedCard item2 in cardsToSpawn)
 			{
+				if (CoopPortalsPlugin.VsMode.Value)
+				{
+					switch (item2.CardPrefabId)
+					{
+						case Cards.archer:
+							item2.CardPrefabId = "cp_evil_archer";
+							break;
+						case Cards.kid:
+							item2.CardPrefabId = "cp_evil_baby";
+							break;
+						case Cards.builder:
+							item2.CardPrefabId = "cp_evil_builder";
+							break;
+						case Cards.cat:
+							item2.CardPrefabId = "cp_evil_cat";
+							break;
+						case Cards.dog:
+							item2.CardPrefabId = "cp_evil_dog";
+							break;
+						case Cards.explorer:
+							item2.CardPrefabId = "cp_evil_explorer";
+							break;
+						case Cards.fisher:
+							item2.CardPrefabId = "cp_evil_fisher";
+							break;
+						case Cards.friendly_pirate:
+							item2.CardPrefabId = "cp_evil_friendly_pirate";
+							break;
+						case Cards.jester:
+							item2.CardPrefabId = "cp_evil_jester";
+							break;
+						case Cards.kitten:
+							item2.CardPrefabId = "cp_evil_kitten";
+							break;
+						case Cards.lumberjack:
+							item2.CardPrefabId = "cp_evil_lumberjack";
+							break;
+						case Cards.mage:
+							item2.CardPrefabId = "cp_evil_mage";
+							break;
+						case Cards.militia:
+							item2.CardPrefabId = "cp_evil_militia";
+							break;
+						case Cards.miner:
+							item2.CardPrefabId = "cp_evil_miner";
+							break;
+						case Cards.ninja:
+							item2.CardPrefabId = "cp_evil_ninja";
+							break;
+						case Cards.old_cat:
+							item2.CardPrefabId = "cp_evil_old_cat";
+							break;
+						case Cards.old_dog:
+							item2.CardPrefabId = "cp_evil_old_dog";
+							break;
+						case Cards.old_villager:
+							item2.CardPrefabId = "cp_evil_old_villager";
+							break;
+						case Cards.puppy:
+							item2.CardPrefabId = "cp_evil_puppy";
+							break;
+						case Cards.swordsman:
+							item2.CardPrefabId = "cp_evil_swordsman";
+							break;
+						case Cards.trained_monkey:
+							item2.CardPrefabId = "cp_evil_trained_monkey";
+							break;
+						case Cards.villager:
+							item2.CardPrefabId = "cp_evil_villager";
+							break;
+						case Cards.warrior:
+							item2.CardPrefabId = "cp_evil_warrior";
+							break;
+						case Cards.wizard:
+							item2.CardPrefabId = "cp_evil_wizard";
+							break;
+						case Cards.teenage_villager:
+							item2.CardPrefabId = "cp_evil_young_villager";
+							break;
+					}
+				}
 				CardData cardData = WorldManager.instance.CreateCard(base.transform.position, item2.CardPrefabId, item2.FaceUp, checkAddToStack: false, playSound: false);
 				hostileCreated = hostileCreated || cardData is Enemy;
 				CoopPortalsPlugin.Log("Spawned from the portal " + this.UniqueId + " a card: " + cardData.Id);
@@ -535,14 +656,20 @@ public class CoopPortal : CardData
 				}
 			}
 			AudioManager.me.PlaySound2D(CoopPortalsPlugin.MyAudioClips["portalingGetting"], UnityEngine.Random.Range(0.8f, 1.2f), Math.Min((float)cardsToSpawn.Count, 3f) * 0.5f);
-			QuestManager.instance.SpecialActionComplete("cp_teleport_to_friend");
+			
 			if (hostileCreated)
 			{
 				AudioManager.me.PlaySound2D(CoopPortalsPlugin.MyAudioClips["portalingGetting"], 0.6f, 0.5f);
 				AudioManager.me.PlaySound2D(CoopPortalsPlugin.MyAudioClips["portalingGetting"], 1.4f, 0.5f);
-				QuestManager.instance.SpecialActionComplete("cp_teleport_hostile_to_friend");
 			}
-			WorldManager.instance.StackSend(WorldManager.instance.GetCardWithUniqueId(cardsToSpawn[0].UniqueId).GetRootCard(), MyGameCard);
+			if (CoopPortalsPlugin.VsMode.Value)
+			{
+				WorldManager.instance.GetCardWithUniqueId(cardsToSpawn[0].UniqueId).GetRootCard().SendIt();
+			}
+			else
+			{
+				WorldManager.instance.StackSend(WorldManager.instance.GetCardWithUniqueId(cardsToSpawn[0].UniqueId).GetRootCard(), MyGameCard);
+			}
 			SendToFriend(PortalPacket.MessageType.PortalingCardsSuccess);
 		}
 		catch
@@ -551,38 +678,41 @@ public class CoopPortal : CardData
 		}
 	}
 
-	public virtual void SendToFriend(PortalPacket.MessageType type)
+	public virtual void SendToFriend(PortalPacket.MessageType type, string message = "")
 	{
-		SendToFriend(new List<SavedCard>(), type);
+		SendToFriend(new List<SavedCard>(), type, 10, message);
 	}
 
-	public virtual void SendToFriend(List<GameCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10)
+	public virtual void SendToFriend(List<GameCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10, string message = "")
 	{
 		List<SavedCard> savedCards = new List<SavedCard>();
+		QuestManager.instance.SpecialActionComplete("cp_teleport_to_friend");
 		foreach (GameCard card in cards)
 		{
 			SavedCard item = card.ToSavedCard();
+			if (card.CardData is Enemy) QuestManager.instance.SpecialActionComplete("cp_teleport_hostile_to_friend");
 			savedCards.Add(item);
 		}
-		SendToFriend(savedCards, type, age);
+		SendToFriend(savedCards, type, age, message);
 	}
 
-	public virtual void SendToFriend(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10)
+	public virtual void SendToFriend(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10, string message = "")
 	{
 		//CoopPortalsPlugin.Log(UniqueId+": "+type.ToString()+" to "+ConnectedPortalUId);
 		if (!HasConnectedFriend || age <= 0 || (type == PortalPacket.MessageType.PortalingCardsStart && !cards.Any()))
 		{
 			return;
 		}
-		byte[]? array = MakeAPack(cards, type, age)?.ToBytes();
+		byte[]? array = MakeAPack(cards, type, age, message)?.ToBytes();
 		if (array != null)
 		{
 			CoopPortalsPlugin.SendPortalPacket(ConnectedFriend, array, (uint)array.Length, EP2PSend.k_EP2PSendReliable);
 		}
 	}
-	public virtual PortalPacket? MakeAPack(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10)
+	public virtual PortalPacket? MakeAPack(List<SavedCard> cards, PortalPacket.MessageType type = PortalPacket.MessageType.PortalingCardsStart, short age = 10, string message = "")
 	{
 		PortalPacket portalPacket = new PortalPacket(type, UniqueId, ConnectedPortalUId == null ? "" : ConnectedPortalUId, age);
+		portalPacket.Message = message;
 		if (cards.Any())
 		{
 			portalPacket.Cards.AddRange(cards);
@@ -646,7 +776,7 @@ public class CoopPortal : CardData
 
     public override void StoppedDragging()
     {
-		if (ConnectionActive)
+		if (ConnectionActive && !CoopPortalsPlugin.VsMode.Value)
 		{
 			
 			var overlaping = MyGameCard.GetOverlappingCards();
